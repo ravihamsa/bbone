@@ -40,6 +40,7 @@ define(['base/app', 'base', 'widgets/form/validator', 'text!./inputView.html'], 
             active: true,
             disabled: false,
             readonly: false,
+            skipPost:false,
             value: null,
             label: null,
             activeRules: [],
@@ -143,21 +144,6 @@ define(['base/app', 'base', 'widgets/form/validator', 'text!./inputView.html'], 
             'blur .js-validate-blur':'validateValue',
             'keyup .js-update-keyup':'updateValue'
         },
-        postRender: function() {
-            this.syncAttributes();
-        },
-        syncAttributes: function() {
-            var model = this.model;
-            var attr = model.toJSON();
-            _.each(attr, function(value, attribute) {
-                var handler = this[attribute + 'ChangeHandler'];
-                if (handler && typeof handler === 'function') {
-                    handler.call(this, model.get(attribute));
-                }
-            }, this);
-            this.updateValue(true);
-        },
-
         disabledChangeHandler: function(value) {
             this.$el.toggleClass('disabled', value);
             this.$('input').attr('disabled', value);

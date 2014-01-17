@@ -2,26 +2,6 @@ define(['base'], function (Base) {
 
     "use strict";
 
-    var baseUtil = Base.util;
-
-    var View = Base.View.extend({
-        template: '<div class="list-view"></div>',
-        postRender: function () {
-            var _this = this;
-            var items = this.model.get('items');
-            var listView = baseUtil.createView({
-                View: Base.CollectionView,
-                collection: items,
-                parentEl: _this.$('.list-view'),
-                ItemView: _this.getOption('ItemView') || ItemView,
-                parentView: _this
-            });
-        },
-        actionHandler: function (selectedId) {
-            this.model.setSelectedById(selectedId);
-        }
-    });
-
     var ItemModel = Base.Model.extend({
         defaults: {
             selected: false
@@ -41,8 +21,8 @@ define(['base'], function (Base) {
     var ItemView = Base.View.extend({
         tagName: 'li',
         className: 'single-select-item',
-        template: '<a href="#{{id}}" class="action">{{name}}</a>',
-        changeHandler: function () {
+        template: '<a href="#select" data-id="{{id}}" class="action">{{name}}</a>',
+        changeHandler: function() {
             this.render();
             this.$el.toggleClass('active', this.model.is('selected'));
         }
@@ -52,16 +32,27 @@ define(['base'], function (Base) {
         model: ItemModel
     });
 
+    var View = Base.View.extend({
+        template: '<div class="list-view"></div>',
+        views: {
+            listView: function() {
+                var _this = this;
+                var items = this.model.get('items');
+                return {
+                    View: Base.CollectionView,
+                    collection: items,
+                    parentEl: '.list-view',
+                    ItemView: _this.getOption('ItemView') || ItemView
+                };
+            }
+        },
+        actionHandler: function(action, event) {
 
-    var setupFunctions = [setupSingleSelection];
+            if (action === 'select') {
+                var selectedId = $(event.target).data('id');
+                this.model.setSelectedById(selectedId);
+            }
 
-    var Model = Base.Model.extend({
-        constructor: function (options) {
-            var _this = this;
-            Base.Model.call(_this, options);
-            _.each(setupFunctions, function (func) {
-                func(_this,  {});
-            });
         }
     });
 
@@ -72,11 +63,15 @@ define(['base'], function (Base) {
         var coll = model.get('items');
 
         if (!coll) {
-            coll = new ItemCollection();
+
+            var ItemCollectionClass = model.getOption('ItemCollection') || ItemCollection;
+            coll = new ItemCollectionClass();
             model.set('items', coll);
         }
 
-        var selectedItem = coll.findWhere({selected: true});
+        var selectedItem = coll.findWhere({
+            selected: true
+        });
         if (selectedItem) {
             selected = selectedItem;
             previousSelected = selectedItem;
@@ -84,14 +79,19 @@ define(['base'], function (Base) {
 
         var updateSelected = function () {
             model.set('selectedItem', selected);
+            model.trigger('selectionChange', selected, previousSelected);
         };
 
         model.getSelected = function () {
             return selected;
         };
 
-        model.getSelectedIndex = function () {
-            if(selected!== undefined){
+        model.getSelectedId = function() {
+            return selected.id;
+        };
+
+        model.getSelectedIndex = function() {
+            if (selected !== undefined) {
                 return coll.indexOf(selected);
             }else{
                 return -1;
@@ -147,7 +147,9 @@ define(['base'], function (Base) {
         model.clearSelection = function () {
             previousSelected = selected;
             selected = null;
-            previousSelected.deselect();
+            if (previousSelected) {
+                previousSelected.deselect();
+            }
             updateSelected();
         };
 
@@ -163,8 +165,21 @@ define(['base'], function (Base) {
             }
         };
 
+        updateSelected();
+
     }
 
+    var setupFunctions = [setupSingleSelection];
+
+        var Model = Base.Model.extend({
+        constructor: function(options) {
+            var _this = this;
+            Base.Model.call(_this, options);
+            _.each(setupFunctions, function (func) {
+                func(_this,  {});
+            });
+        }
+    });
     return {
         View: View,
         Model: Model,

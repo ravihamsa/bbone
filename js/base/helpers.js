@@ -4,9 +4,15 @@ define(['base/app'], function (app) {
         return element.label || element.name;
     });
 
+    var monthArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 
     Handlebars.registerHelper('string', function (str) {
         return app.getString(str);
+    });
+
+ Handlebars.registerHelper('monthName', function(month) {
+        return monthArr[month];
     });
 
     Handlebars.registerHelper('stringify', function (obj) {
@@ -28,6 +34,26 @@ define(['base/app'], function (app) {
         }
     });
 
+    Handlebars.registerHelper('ifEqual', function (val1, val2, obj) {
+
+        if (val1 === val2) {
+            return obj.fn(this);
+        }
+        else if (obj.inverse) {
+            return obj.inverse(this);
+        }
+    });
+Handlebars.registerHelper('isTrue', function(val1, obj) {
+
+        if (val1 === true) {
+            return obj.fn(this);
+        }
+        else if (obj.inverse) {
+            return obj.inverse(this);
+        }
+    });
+
+
 
     Handlebars.registerHelper('buttonType', function () {
         if (this.isPrimary) {
@@ -48,15 +74,6 @@ define(['base/app'], function (app) {
 
     });
 
-    Handlebars.registerHelper('ifEqual', function (val1, val2, obj) {
-
-        if (val1 === val2) {
-            return obj.fn(this);
-        }
-        else if (obj.inverse) {
-            return obj.inverse(this);
-        }
-    });
 
 
 });

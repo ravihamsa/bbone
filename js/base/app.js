@@ -1,41 +1,55 @@
-define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'], function (require, Router, dataLoader, baseUtil, BaseModel) {
+define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'], function(require, Router, dataLoader, baseUtil, BaseModel) {
     "use strict";
 
 
     $.browser = {
-        msie:false
+        msie: false
     };
 
     //fix caching in IE
-    $.ajaxSetup({ cache: false });
+    $.ajaxSetup({
+        cache: false
+    });
 
 
     var hex_md5 = window.hex_md5;
 
-    function checksum(s)
-    {
+    function checksum(s) {
         var i;
         var chk = 0x12345678;
 
-        for (i = 0; i < s.length; i++) {
-            chk += (s.charCodeAt(i) * i);
+        var start = 1,
+            end = s.length + 1; // to tackle 1 length strings
+
+        for (i = start; i < end; i++) {
+            chk += (s.charCodeAt(i - 1) * i);
         }
 
         return chk;
     }
 
 
-    var getHash = function (key) {
+    var getHash = function(key) {
         return checksum(key.toString());
         //return 'hash_'+(hashCounter++);
 
     };
 
-    var getTemplateDefByHash = function (hash) {
+    var getTemplateDefByHash = function(hash) {
         return templateIndex[hash];
     };
-    var getRequestDefByHash = function (hash) {
-        return dataIndex[hash];
+    var getRequestDefByHash = function(hash, id) {
+        if (dataIndex[id] && dataIndex[id][hash]) {
+            return dataIndex[id][hash];
+        }
+    };
+    var clearDefById = function(id) {
+
+        if (dataIndex[id]) {
+            console.log('clearing cache for id', id);
+            delete dataIndex[id];
+        }
+
     };
 
     var idCounter = 1;
@@ -48,11 +62,11 @@ define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'],
         baseUrl: 'js/',
         defaultApp: 'default',
         appBody: '#app-body',
-        compileTemplate: function (str) {
+        compileTemplate: function(str) {
             return Handlebars.compile(str);
         },
         router: new Router(),
-        getTemplateDef: function (template, templateType) {
+        getTemplateDef: function(template, templateType) {
             var _this = this;
             template = template || '';
             var hash = getHash(template);
@@ -72,7 +86,7 @@ define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'],
                     //if template is an url
                     //console.log(template.indexOf('.html'), template.length - 5);
                     if (/html$/.test(template)) {
-                        require(['text!' + template], function (txt) {
+                        require(['text!' + template], function(txt) {
                             def.resolve(templateCompiler(txt));
                         });
                     } else if (template.indexOf('#') === 0) {
@@ -85,20 +99,36 @@ define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'],
             }
             return def;
         },
-        cacheTemplate: function (def, hash) {
+        cacheTemplate: function(def, hash) {
             templateIndex[hash] = def;
         },
-        cacheData: function (def, hash) {
-            dataIndex[hash] = def;
+        cacheData: function(def, hash, id) {
+            if (!dataIndex[id]) {
+                dataIndex[id] = [];
+            }
+            dataIndex[id][hash] = def;
         },
-        log: function () {
+        log: function() {
             console.log.apply(console, arguments);
         },
-        responseParser: function (resp) {
+        getString: function(strKey) {
+            if (stringIndex[strKey]) {
+                return stringIndex[strKey];
+            } else {
+                return strKey;
+            }
+        },
+	escapeString: function(str) {
+            return Handlebars.Utils.escapeExpression(str);
+        },
+        responseParser: function(resp) {
+            return resp;
+        },
+        parseFailureResponse: function(resp) {
             return resp;
         },
         appModel: new BaseModel(),
-        getRequestDef: function (config) {
+        getRequestDef: function(config) {
             var _this = this;
 
 
@@ -121,18 +151,18 @@ define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'],
             var hash = getHash(JSON.stringify(_.pick(config, 'id', 'params')));
 
             //check if given hash already has a request running;
-            var def = getRequestDefByHash(hash);
+            var def = getRequestDefByHash(hash, config.id);
 
             if (!def) {
                 def = $.Deferred();
-                var request = dataLoader.getRequest(config.id,config.params);
+                var request = dataLoader.getRequest(config.id, config.params);
 
-                request.done(function (resp) {
+                request.done(function(resp) {
                     var parsedResponse = requestParser(resp);
                     if (parsedResponse.errors) {
                         def.reject(resp, parsedResponse.errors);
                     } else {
-                        if(config.cache === "session"){
+                        if (config.cache === "session") {
                             _this.cacheData(def, hash);
                         }
                         def.resolve(parsedResponse);
@@ -140,118 +170,107 @@ define(['require', 'base/router', 'base/dataLoader', 'base/util', 'base/model'],
                     }
                 });
 
-                request.fail(function (resp) {
-                    def.resolve({errors:[{errorCode:'network issue', message:'Network failure try again later'}]});
+                request.fail(function(resp) {
+                    def.reject({
+                        errors: [{
+                            errorCode: 'network issue',
+                            message: 'Network failure try again later'
+                        }]
+                    });
                 });
 
             }
             return def;
         },
-        beautifyId: function (s) {
-            s = s.replace(/_([a-z])/g, function (s) {
+        beautifyId: function(s) {
+            s = s.replace(/_([a-z])/g, function(s) {
                 return s.toUpperCase();
             });
 
-            s= s.replace(/_/g,'');
+            s = s.replace(/_/g, '');
 
-            s = s.replace(/([A-Z])/g, function (s) {
+            s = s.replace(/([A-Z])/g, function(s) {
                 return ' ' + s;
             });
 
-            return s.replace(/(^.)/g, function (s) {
+            return s.replace(/(^.)/g, function(s) {
                 return s.toUpperCase();
             });
         },
-        getDataIndex: function () {
+        getDataIndex: function() {
             return dataIndex;
         },
-        getTemplateIndex: function () {
+        getTemplateIndex: function() {
             return templateIndex;
         },
-        getFormatted:function(value, format, dataObj){
-            if(typeof format === 'function'){
+        getFormatted: function(value, format, dataObj) {
+            if (typeof format === 'function') {
                 return format.apply(null, arguments);
             }
 
             var formatter = formatterIndex[format];
-            if(formatter){
+            if (formatter) {
                 return formatter(value, dataObj);
-            }else{
+            } else {
                 return value;
             }
 
         },
-        addFormatter:function(type, formatterFunction){
-            if(formatterIndex[type]){
+        addFormatter: function(type, formatterFunction) {
+            if (formatterIndex[type]) {
                 throw new Error('formatter already exist');
-            }else{
+            } else {
                 this.setFormatter.apply(null, arguments);
             }
         },
-        setFormatter:function(type, formatterFunction){
+        setFormatter: function(type, formatterFunction) {
             formatterIndex[type] = formatterFunction;
         },
-        updateStringIndex:function(newStringsIndex){
-            stringIndex  = _.extend({}, stringIndex, newStringsIndex);
+
+
+
+	getHash: getHash,
+        getPageAttributes: function() {
+            return this.appModel.toJSON();
         },
-        getString:function(strKey){
-            if(stringIndex[strKey]){
-                return stringIndex[strKey];
-            }else{
-                return strKey;
-            }
-        },
-        getPageAttribute:function(name){
+        getPageAttribute: function(name) {
             //console.log(name, this.appModel.toJSON());
             return this.appModel.get(name);
         },
-        getPageAttributes:function(){
-            return this.appModel.toJSON();
+        updateStringIndex: function(newStringsIndex) {
+            stringIndex = _.extend({}, stringIndex, newStringsIndex);
         },
-        /*
-        getUrl:function(params){
-            var url = '#';
-            if(params.appId){
-                url+=params.appId;
-            }
-            if(params.pageId){
-                url+='/'+params.pageId
-            }
-            if(params){
-                url+='/'+baseUtil.objectToParams(_.omit(params, 'appId', 'pageId'));
-            }
 
-            return url;
-        },
-        */
-        getHash: getHash,
+        
 
-        getUniqueId: function () {
+        getUniqueId: function() {
             return '__tmp_' + idCounter++;
         },
-        setupApp:function(callback){
+        setupApp: function(callback) {
             callback();
         },
-        tearApp:function(callback){
-            if(callback){
+        tearApp: function(callback) {
+            if (callback) {
                 callback();
             }
-            
+
         },
-        navigateTo:function(appId, pageId, params){
-            app.router.navigate(this.getURL(appId, pageId, params), {trigger:true});
+        navigateTo: function(appId, pageId, params) {
+            app.router.navigate(this.getURL(appId, pageId, params), {
+                trigger: true
+            });
         },
-        getURL:function(appId, pageId, params){
+        getURL: function(appId, pageId, params) {
             //console.log(arguments);
             var url = '#';
-            if(appId){
-                url+=appId;
+            if (appId) {
+                url += appId;
             }
-            if(pageId){
-                url+='/'+pageId;
+            if (pageId) {
+                url += '/' + pageId;
             }
-            if(params){
-                url+='/'+baseUtil.objectToParams(_.omit(params, 'appId', 'pageId'));
+            if (params) {
+                url += '/' + baseUtil.objectToParams(_.omit(params, 'appId', 'pageId'));
             }
 
             //console.log(url);

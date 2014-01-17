@@ -200,6 +200,31 @@ define(['base/app', 'base/model', 'base/util', 'base/mixins/config'], function(a
         });
     };
 
+    var bindAppEvents = function(context) {
+        var eventList = context.getOption('appEvents');
+        if (!_.isEmpty(eventList)) {
+            _.each(eventList, function(handler, event) {
+                var events, handlers, splitter;
+                splitter = /\s+/;
+                handlers = handler.split(splitter);
+                events = event.split(splitter);
+                _.each(handlers, function(shandler) {
+                    _.each(events, function(sevent) {
+                        context.listenTo(app, sevent, function() {
+                            if (context[shandler]) {
+                                var args = Array.prototype.slice.call(arguments);
+                                args.unshift(sevent);
+                                context[shandler].apply(context, args);
+                            } else {
+                                throw shandler + ' Not Defined';
+                            }
+                        });
+                    });
+                });
+            });
+        }
+    };
+
     var bindCustomEvents = function(context) {
         var eventList;
         eventList = context.customEvents;
@@ -266,12 +291,17 @@ define(['base/app', 'base/model', 'base/util', 'base/mixins/config'], function(a
                 }
                 state = toState;
                 var StateView = stateConfigs[toState];
-                if (StateView) {
-                    cleanUpState();
-                    renderState(StateView);
+                if (_.isFunction(StateView)) {
+                    StateView.call(context, state);
                 } else {
-                    throw new Error('Invalid State');
+                    if (StateView) {
+                        cleanUpState();
+                        renderState(StateView);
+                    } else {
+                        throw new Error('Invalid State');
+                    }
                 }
+
 
             } else {
                 throw new Error('state should be a string');
@@ -629,7 +659,7 @@ define(['base/app', 'base/model', 'base/util', 'base/mixins/config'], function(a
         };
     };
 
-    var setupFunctions = [bindDataEvents, bindCustomEvents, setupMessageRoom, setupMetaRequests, setupTemplateEvents, setupAttributeWatch, setupActionNavigateAnchors, setupRenderEvents, setupStateEvents, setupChildViews, setupConfig];
+    var setupFunctions = [bindDataEvents,  bindAppEvents, bindCustomEvents, setupMessageRoom, setupMetaRequests, setupTemplateEvents, setupAttributeWatch, setupActionNavigateAnchors, setupRenderEvents, setupStateEvents, setupChildViews, setupConfig];
 
     return BaseView;
 });

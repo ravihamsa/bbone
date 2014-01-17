@@ -11,14 +11,16 @@ define([
     'base',
     'widgets/form/element',
     'widgets/messageStack',
+    'widgets/calendar',
     'text!./form/checkListView.html',
     'text!./form/checkBoxView.html',
     'text!./form/radioListView.html',
     'text!./form/selectView.html',
     'text!./form/textAreaView.html',
     'text!./form/buttonView.html',
+    'text!./form/dateInputView.html',
     'text!./form/messageView.html'
-], function (app, baseUtil, Base, Element, MessageStack, checkListTemplate, checkBoxTemplate, radioListTemplate, selectViewTemplate, textAreaTemplate, buttonViewTemplate, messageViewTemplate) {
+], function(app, baseUtil, Base, Element, MessageStack, Calendar, checkListTemplate, checkBoxTemplate, radioListTemplate, selectViewTemplate, textAreaTemplate, buttonViewTemplate, dateInputTemplate, messageViewTemplate) {
     'use strict';
 
     var ElementView = Element.View;
@@ -38,6 +40,107 @@ define([
         }
     });
 
+var InputView = ElementView.extend({
+        events: {
+            'change input': 'updateValue',
+            'blur input': 'resetIfEmpty',
+            'focus input': 'selectIfDefault',
+            'click input': 'clearIfDefault'
+        },
+        selectIfDefault: function() {
+            if (this.model.isElementDefault()) {
+                this.$('input').select();
+            }
+        },
+        clearIfDefault: function() {
+            if (this.model.isElementDefault()) {
+                this.$('input').val('');
+            }
+        },
+        resetIfEmpty: function() {
+            var inputValue = this.$('input').val();
+            if (inputValue === '') {
+                var attr = this.model.toJSON();
+                if (attr.defaultValue) {
+                    this.$('input').val(attr.defaultValue);
+                }
+            }
+            this.updateValue();
+        }
+    });
+
+    var DateInputView = InputView.extend({
+        template: dateInputTemplate,
+        events: {
+            'click .dateInput': 'showDatePicker',
+            'change .dateInput': 'dateChangeHandler'
+        },
+        postRender: function() {
+            var _this = this;
+            _this.hideDatePicker();
+            var monthView = this.getSubView('monthView');
+            this.listenTo(monthView, 'dateClicked', function(date) {
+                _this.hideDatePicker();
+                _this.$('.dateInput').val(date.format('L'));
+                _this.updateValue();
+            });
+
+            var monthViewEl = monthView.$el;
+
+            this.listenTo(app,'bodyClick',function  (e) {
+                var target = $(e.target);
+                if (target.parents().index(_this.$el) == -1) {
+                    if (monthViewEl.is(":visible")) {
+                        monthViewEl.hide();
+                    }
+                }
+            });
+        },
+        views: {
+            monthView: {
+                View: Calendar.Month.View,
+                Model: Calendar.Month.Model,
+                parentEl: '.monthView'
+            }
+        },
+        showDatePicker: function() {
+            var monthView = this.getSubView('monthView');
+            var value = this.model.get('value');
+            var date = moment(value, 'MM/DD/YYYY');
+            monthView.model.set({
+                year: date.year(),
+                month: date.month(),
+                selectedEpoch: date.valueOf()
+            });
+            monthView.show();
+
+        },
+        hideDatePicker: function() {
+            var monthView = this.getSubView('monthView');
+            monthView.hide();
+        },
+        valueFunction: function() {
+            return this.$('.dateInput').val();
+        },
+        valueChangeHandler: function(value) {
+            var date = moment(value, 'MM/DD/YYYY');
+            if (!date.isValid()) {
+                date = moment();
+                this.model.set('value', date.format('L'));
+            }
+            this.$('.dateInput').val(date.format('L'));
+        },
+        dateChangeHandler: function() {
+            var value = this.$('.dateInput').val();
+            var date = moment(value, 'MM/DD/YYYY');
+            if (!date.isValid()) {
+                this.valueChangeHandler(this.model.get('value'));
+            } else {
+                this.model.set('value', value);
+                this.hideDatePicker();
+            }
+        }
+    });
     var CheckboxView = ElementView.extend({
         template: checkBoxTemplate,
         valueFunction: function () {
@@ -186,6 +289,7 @@ define([
         'select': SelectView,
         'textarea': TextAreaView,
         'checkbox': CheckboxView,
+        'dateInput': DateInputView,
         'radioList': RadioListView,
         'checkList': CheckListView,
         'hidden': HiddenView,
@@ -302,8 +406,8 @@ define([
                     model: model,
                     el: viewEl
                 });
+                view.trigger('rendered');
                 view.postRender();
-                view.syncAttributes();
             } else {
 
                 view = baseUtil.createView({
@@ -313,7 +417,7 @@ define([
                 });
 
                 var group = attr.group;
-                this.$('.' + groupPrefix + group).append(view.render().el);
+                this.$('.' + groupPrefix + group).append(view.el);
             }
         },
         removeElement: function (model) {

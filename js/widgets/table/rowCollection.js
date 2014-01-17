@@ -139,49 +139,6 @@ define(['base/app', 'base/util' , 'base/model', 'base/collection'], function (ba
 
     };
 
-    var configureMixin = function (context) {
-        var config = new BaseModel({
-            sortOrder:'asc'
-        });
-
-        var methods = {
-            setConfig: function (key, value) {
-                config.set(key, value);
-            },
-            getConfig: function (key) {
-                return config.get(key);
-            },
-            setConfigs: function (obj) {
-                config.set(obj);
-            },
-            getConfigs: function (useDeep) {
-                return config.toJSON(useDeep);
-            },
-            getConfigModel: function () {
-                return config;
-            }
-        };
-
-        _.extend(context, methods);
-        context.setConfigs(_.extend({}, context.getOption('config')));
-        context.listenTo(config, 'all', function (sourceEventName) {
-            context.trigger.apply(context, ['config_' + sourceEventName].concat(_.rest(arguments)));
-        });
-
-        config.on('change:page change:perPage',function(model){
-            var config = model.toJSON();
-            var start = (config.page-1)*config.perPage;
-            var end=Math.min(start+config.perPage, config.totalRecords);
-            model.set({
-                start:start,
-                end:end
-            });
-        });
-
-    };
-
-
-
 
 
     var setupFunctions = [setupFilters, setupSortActions, setupPagination];

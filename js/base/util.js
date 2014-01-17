@@ -51,7 +51,7 @@ define(function() {
                         view.$el.appendTo(config.parentEl);
                     }
 
-                }else{
+                }else if(parentView){
                     view.$el.appendTo(parentView.el);
                 }
 
