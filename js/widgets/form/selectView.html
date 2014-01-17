@@ -1,0 +1,11 @@
+<div class="form-group ">
+    <label>{{elementLabel this}}</label>
+    <div class="controls kensho-select">
+        <select name="{{name}}" class="el-{{name}} form-control js-validate-change">
+            {{#each options}}
+            <option value="{{id}}">{{name}}</option>
+            {{/each}}
+        </select>
+        <span class="message-block"></span>
+    </div>
+</div>

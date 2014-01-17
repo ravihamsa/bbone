@@ -1,0 +1,11 @@
+<div class="form-group">
+    <label>{{elementLabel this}}</label>
+    <div class="controls">
+        {{#each options}}
+        <label class="checkbox-inline">
+            <input type="checkbox" name="{{id}}" value="{{id}}" class="js-validate-change"> {{name}}
+        </label>
+        {{/each}}
+        <span class="message-block"></span>
+    </div>
+</div>

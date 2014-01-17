@@ -1,0 +1,1 @@
+define(["require","mixins/config"],function(e){return{config:e("mixins/config")}});

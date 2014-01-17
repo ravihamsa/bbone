@@ -1,0 +1,1 @@
+define(["base/view","base/model","text!./header/header.html"],function(e,t,n){var r=e.extend({template:n,appIdChangeHandler:function(e){this.$(".active").removeClass("active"),this.$("."+e).addClass("active")}});return{View:r,Model:t}});

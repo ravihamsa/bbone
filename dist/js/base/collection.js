@@ -1,0 +1,1 @@
+define(["base/app","base/model","base/mixins/config"],function(e,t,n){var r=Backbone.Collection.extend({model:t,constructor:function(e,t){var r=this;r.options=t||{},arguments[1]=_.omit(t,"configs"),Backbone.Collection.apply(r,arguments),n.call(null,r)},getOption:function(e){return this.options[e]||this[e]}});return r});
