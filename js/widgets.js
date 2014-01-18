@@ -7,7 +7,7 @@ define(function(require) {
         MessageStack: require('widgets/messageStack'),
         Tab: require('widgets/tab'),
         Table:require('widgets/table'),
-        DropDown:require('widgets/dropdown')
+        DropDown:require('widgets/dropdown'),
         Chart:require('widgets/chart')
     };
 });

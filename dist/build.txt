@@ -33,12 +33,15 @@ text!widgets/form/inputView.html
 js/widgets/form/element.js
 text!widgets/messageStack/messageStack.html
 js/widgets/messageStack.js
+js/widgets/calendar/month.js
+js/widgets/calendar.js
 text!widgets/form/checkListView.html
 text!widgets/form/checkBoxView.html
 text!widgets/form/radioListView.html
 text!widgets/form/selectView.html
 text!widgets/form/textAreaView.html
 text!widgets/form/buttonView.html
+text!widgets/form/dateInputView.html
 text!widgets/form/messageView.html
 js/widgets/form.js
 js/widgets/tab.js
@@ -46,6 +49,8 @@ js/widgets/table/rowCollection.js
 text!widgets/table/pagination.html
 js/widgets/table/pagination.js
 js/widgets/table.js
+text!widgets/dropdown/dropdown.html
+js/widgets/dropdown.js
 js/widgets/chart.js
 js/widgets.js
 
@@ -102,12 +107,15 @@ js/list/multiSelect.js
 js/list.js
 text!widgets/messageStack/messageStack.html
 js/widgets/messageStack.js
+js/widgets/calendar/month.js
+js/widgets/calendar.js
 text!widgets/form/checkListView.html
 text!widgets/form/checkBoxView.html
 text!widgets/form/radioListView.html
 text!widgets/form/selectView.html
 text!widgets/form/textAreaView.html
 text!widgets/form/buttonView.html
+text!widgets/form/dateInputView.html
 text!widgets/form/messageView.html
 js/widgets/form.js
 js/widgets/tab.js
@@ -141,12 +149,15 @@ js/list/multiSelect.js
 js/list.js
 text!widgets/messageStack/messageStack.html
 js/widgets/messageStack.js
+js/widgets/calendar/month.js
+js/widgets/calendar.js
 text!widgets/form/checkListView.html
 text!widgets/form/checkBoxView.html
 text!widgets/form/radioListView.html
 text!widgets/form/selectView.html
 text!widgets/form/textAreaView.html
 text!widgets/form/buttonView.html
+text!widgets/form/dateInputView.html
 text!widgets/form/messageView.html
 js/widgets/form.js
 js/base-list-idm.js
